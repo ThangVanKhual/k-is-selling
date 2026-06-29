@@ -1,0 +1,45 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id            String   @id
+  name          String
+  description   String
+  price         Float
+  pdfLocator    String?
+  epubLocator   String?
+  pdfFilename   String   @default("book.pdf")
+  epubFilename  String   @default("book.epub")
+  orders        Order[]
+}
+
+model Order {
+  id               Int      @id @default(autoincrement())
+  receiptCode      String   @unique
+  magicToken       String   @unique
+  productId        String   @default("aether")
+  product          Product  @relation(fields: [productId], references: [id])
+  name             String
+  phone            String
+  email            String?
+  note             String?
+  paymentProofUrl  String
+  paymentProofHash String   @unique
+  status           String   @default("pending") // pending, verified, rejected
+  isRead           Boolean  @default(false)
+  downloadCountPdf Int      @default(0)
+  downloadCountEpub Int     @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Settings {
+  id            Int     @id @default(1)
+  bookPublished Boolean @default(false)
+}
