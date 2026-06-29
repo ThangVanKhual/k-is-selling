@@ -1,0 +1,339 @@
+{
+  "name": "Support Ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "oAuth2",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<REDACTED_VALUE>",
+          "cachedResultName": "<REDACTED_CACHEDRESULTNAME>"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<REDACTED_VALUE>",
+          "cachedResultName": "<REDACTED_CACHEDRESULTNAME>"
+        },
+        "event": "rowAdded",
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          },
+          "valueRender": "FORMATTED_VALUE",
+          "dateTimeRenderOption": "FORMATTED_STRING"
+        }
+      },
+      "id": "<REDACTED_ID_001>",
+      "name": "New Google Form Response",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "<REDACTED_ID_002>",
+              "name": "Ticket ID",
+              "value": "={{ \"TCK-\" + $now.toFormat(\"yyyyLLdd-HHmmss\") + \"-\" + String($execution.id).slice(-6).toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "<REDACTED_ID_003>",
+              "name": "Ticket Status",
+              "value": "Open",
+              "type": "string"
+            },
+            {
+              "id": "<REDACTED_ID_004>",
+              "name": "Created At",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "<REDACTED_ID_005>",
+      "name": "Generate Ticket ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<REDACTED_VALUE>",
+          "cachedResultName": "<REDACTED_CACHEDRESULTNAME>"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<REDACTED_VALUE>",
+          "cachedResultName": "<REDACTED_CACHEDRESULTNAME>"
+        }
+      },
+      "id": "<REDACTED_ID_006>",
+      "name": "Record Ticket ID in Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Generate Ticket ID\").item.json.Email }}",
+        "subject": "=Support ticket received: {{ $(\"Generate Ticket ID\").item.json[\"Ticket ID\"] }}",
+        "message": "=Hello {{ $(\"Generate Ticket ID\").item.json.Name || \"there\" }},<br><br>We received your support request and created ticket <strong>{{ $(\"Generate Ticket ID\").item.json[\"Ticket ID\"] }}</strong>.<br><br><strong>Type:</strong> {{ $(\"Generate Ticket ID\").item.json[\"Ticket Type\"] }}<br><strong>Subject:</strong> {{ $(\"Generate Ticket ID\").item.json.Subject }}<br><br>Our team will review it and follow up soon.<br><br>Thank you,<br>Support Team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "<REDACTED_ID_007>",
+      "name": "Send Customer Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        192
+      ],
+      "webhookId": "<REDACTED_WEBHOOKID>"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Generate Ticket ID\").item.json[\"Ticket Type\"] }}",
+                    "rightValue": "Billing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "<REDACTED_ID_008>"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Billing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Generate Ticket ID\").item.json[\"Ticket Type\"] }}",
+                    "rightValue": "Technical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "<REDACTED_ID_009>"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Technical"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true,
+          "renameFallbackOutput": "General"
+        }
+      },
+      "id": "<REDACTED_ID_010>",
+      "name": "Route by Ticket Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "<REDACTED_CHAT_ID>",
+        "text": "=New billing ticket\nTicket: {{ $(\"Generate Ticket ID\").item.json[\"Ticket ID\"] }}\nCustomer: {{ $(\"Generate Ticket ID\").item.json.Name }} <{{ $(\"Generate Ticket ID\").item.json.Email }}>\nSubject: {{ $(\"Generate Ticket ID\").item.json.Subject }}\nMessage: {{ $(\"Generate Ticket ID\").item.json.Message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "<REDACTED_ID_011>",
+      "name": "Notify Billing",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        0
+      ],
+      "webhookId": "<REDACTED_WEBHOOKID>"
+    },
+    {
+      "parameters": {
+        "chatId": "<REDACTED_CHAT_ID>",
+        "text": "=New technical ticket\nTicket: {{ $(\"Generate Ticket ID\").item.json[\"Ticket ID\"] }}\nCustomer: {{ $(\"Generate Ticket ID\").item.json.Name }} <{{ $(\"Generate Ticket ID\").item.json.Email }}>\nSubject: {{ $(\"Generate Ticket ID\").item.json.Subject }}\nMessage: {{ $(\"Generate Ticket ID\").item.json.Message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "<REDACTED_ID_012>",
+      "name": "Notify Technical",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        192
+      ],
+      "webhookId": "<REDACTED_WEBHOOKID>"
+    },
+    {
+      "parameters": {
+        "chatId": "<REDACTED_CHAT_ID>",
+        "text": "=New support ticket\nTicket: {{ $(\"Generate Ticket ID\").item.json[\"Ticket ID\"] }}\nType: {{ $(\"Generate Ticket ID\").item.json[\"Ticket Type\"] }}\nCustomer: {{ $(\"Generate Ticket ID\").item.json.Name }} <{{ $(\"Generate Ticket ID\").item.json.Email }}>\nSubject: {{ $(\"Generate Ticket ID\").item.json.Subject }}\nMessage: {{ $(\"Generate Ticket ID\").item.json.Message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "<REDACTED_ID_013>",
+      "name": "Notify General Support",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        384
+      ],
+      "webhookId": "<REDACTED_WEBHOOKID>"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Google Form Response": {
+      "main": [
+        [
+          {
+            "node": "Generate Ticket ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Ticket ID": {
+      "main": [
+        [
+          {
+            "node": "Record Ticket ID in Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Ticket ID in Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send Customer Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Customer Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Route by Ticket Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Ticket Type": {
+      "main": [
+        [
+          {
+            "node": "Notify Billing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Technical",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify General Support",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "<REDACTED_VERSIONID>",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "<REDACTED_INSTANCEID>"
+  },
+  "id": "<REDACTED_ID_014>",
+  "tags": []
+}

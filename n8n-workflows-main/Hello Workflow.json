@@ -1,0 +1,143 @@
+{
+  "name": "Hello Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "<REDACTED_ID_001>",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "<REDACTED_ID_002>",
+              "name": "lat",
+              "value": "={{ $json.results[0].latitude }}",
+              "type": "number"
+            },
+            {
+              "id": "<REDACTED_ID_003>",
+              "name": "long",
+              "value": "={{ $json.results[0].longitude }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        0
+      ],
+      "id": "<REDACTED_ID_004>",
+      "name": "Extract Lat-Long"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "<REDACTED_ID_005>",
+      "name": "End"
+    },
+    {
+      "parameters": {
+        "url": "https://geocoding-api.open-meteo.com/v1/search?name=Yangon&count=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "<REDACTED_ID_006>",
+      "name": "Get Location Data"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $json.lat }}&longitude={{ $json.long }}&current=temperature_2m",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        0
+      ],
+      "id": "<REDACTED_ID_007>",
+      "name": "Get Weather Data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Location Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Lat-Long": {
+      "main": [
+        [
+          {
+            "node": "Get Weather Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Location Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Lat-Long",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather Data": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "<REDACTED_VERSIONID>",
+  "meta": {
+    "instanceId": "<REDACTED_INSTANCEID>"
+  },
+  "id": "<REDACTED_ID_008>",
+  "tags": []
+}
